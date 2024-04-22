@@ -36,7 +36,338 @@
     visibility: hidden;
     position: absolute;
 }
+
   </style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Envoi de la requête AJAX pour récupérer la liste des catégories
+    $.ajax({
+        url: 'get_categories.php', // Nom du script PHP qui va récupérer les catégories
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            // Manipulation des données reçues
+            if (data.success) {
+                // Créer des boutons de filtre pour chaque catégorie
+$.each(data.categories, function(index, category) {
+    var categoryLower = category.toLowerCase();
+    var filterBtn = $('<div class="filter" id="' + categoryLower + '"><span>' + category + '</span><i class="bi bi-trash" style="font-size: 0.7em;margin-left:8px;"></i></div>');
+
+    // Ajout d'un gestionnaire d'événement au clic sur l'icône de suppression
+    filterBtn.find('.bi-trash').on('click', function() {
+        var categoryToDelete = categoryLower;
+        // Demander confirmation avant la suppression
+        var confirmDelete = confirm('Voulez-vous vraiment supprimer cette catégorie ?');
+        if (confirmDelete) {
+            // Faire une requête AJAX pour supprimer la catégorie
+            $.ajax({
+                url: 'delete_category.php', // Script PHP pour supprimer la catégorie
+                type: 'POST',
+                dataType: 'json',
+                data: { category: categoryToDelete }, // Envoyer la catégorie à supprimer
+                success: function(response) {
+                    if (response.success) {
+                        // Catégorie supprimée avec succès
+                        alert('La catégorie a été supprimée avec succès.');
+                        // Actualiser la liste des catégories après la suppression
+                        // Vous pouvez recharger la page ou actualiser la liste des catégories à l'aide d'une autre méthode AJAX
+                     // Recharger la page après la création réussie du dossier
+        location.reload();
+                      } else {
+                        // Erreur lors de la suppression de la catégorie
+                        alert('Une erreur s\'est produite lors de la suppression de la catégorie.');
+                    }
+                },
+                error: function() {
+                    // Erreur AJAX
+                    alert('Une erreur s\'est produite lors de la requête AJAX.');
+                }
+            });
+        }
+    });
+
+    $('#filters').append(filterBtn);
+});
+
+
+                // Écouter les clics sur les boutons de filtre
+                $('.filter').on('click', function() {
+                    var category = $(this).attr('id'); // Obtenir la catégorie du bouton cliqué
+                    filterImages(category); // Filtrer les images en fonction de la catégorie sélectionnée
+                });
+            } else {
+                console.error('Erreur lors de la récupération des catégories');
+            }
+        },
+        error: function() {
+            console.error('Erreur lors de la requête AJAX');
+        }
+    });
+
+    // Préparer la section de la galerie
+    prepareGallerySection();
+});
+
+// Fonction pour préparer la section de la galerie
+function prepareGallerySection() {
+    // Ajouter le bloc HTML de la section de la galerie
+    var gallerySectionHTML = `
+        <!-- ======= Gallery Section ======= -->
+        <section id="gallery" class="gallery">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <!-- Cette balise sera remplie avec les éléments d'image -->
+                </div>
+            </div>
+        </section>`;
+    $('main').append(gallerySectionHTML);
+}
+
+// Fonction pour filtrer les images en fonction de la catégorie sélectionnée
+function filterImages(category) {
+    // Effacer le contenu précédent de la galerie
+    $('#gallery .container-fluid .row').empty();
+
+    // Envoi de la requête AJAX pour récupérer la liste des images de la catégorie sélectionnée
+    $.ajax({
+        url: 'get_images.php', // Script PHP qui va récupérer les images de la catégorie
+        type: 'GET',
+        dataType: 'json',
+        data: { category: category }, // Envoyer la catégorie sélectionnée au script PHP
+        success: function(data) {
+            // Manipulation des données reçues
+            if (data.success) {
+                // Ajouter les éléments d'image à l'intérieur de la balise div.row
+                $.each(data.images, function(index, image) {
+                    // Créer un élément pour chaque image avec le bloc HTML souhaité
+                    var galleryItemHTML = `
+                        <div class="col-xl-3 col-lg-4 col-md-6">
+                            <div class="gallery-item h-100">
+                                <img src="${image}" class="img-fluid active" alt="${image}">
+                                <div class="gallery-links d-flex align-items-center justify-content-center">
+                                    <a href="${image}" title="${image}" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
+                                    <button class="btn btn-transparent delete-btn" data-image="${image}"><i class="bi bi-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>`;
+                    
+                    // Ajouter l'élément à la galerie
+                    $('#gallery .container-fluid .row').append(galleryItemHTML);
+                });
+            } else {
+                console.error('Erreur lors de la récupération des images');
+            }
+        },
+        error: function() {
+            console.error('Erreur lors de la requête AJAX pour récupérer les images');
+        }
+    });
+}
+
+$('#exampleModal').on('show.bs.modal', function (e) {
+    $('body').addClass("example-open");
+}).on('hide.bs.modal', function (e) {
+    $('body').removeClass("example-open");
+})
+</script>
+<script>
+$(document).ready(function () {
+    // Envoi de la requête AJAX pour récupérer la liste des catégories
+    $.ajax({
+        url: 'get_categories.php', // Nom du script PHP qui va récupérer les catégories
+        type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            // Manipulation des données reçues
+            if (data.success) {
+                var categories = data.categories;
+
+                // Remplir le menu déroulant avec les catégories
+                var selectElement = $('#categorySelect');
+                $.each(categories, function (index, category) {
+                  if (category !== 'Tous') {
+                        selectElement.append($('<option>', {
+                            value: category,
+                            text: category
+                        }));
+                    }
+                });
+                // Remplir le champ caché avec la première option par défaut
+            $('#selectedCategory').val(data.categories[1]);
+            } else {
+                console.error('Erreur lors de la récupération des catégories');
+            }
+        },
+        error: function () {
+            console.error('Erreur lors de la requête AJAX');
+        }
+    });
+});
+</script>
+
+<script>
+$(document).ready(function () {
+  // Gestionnaire d'événement pour le changement de la sélection de catégorie
+  $('#categorySelect').on('change', function () {
+  var selectedValue = $(this).val();
+  $('#selectedCategory').val(selectedValue); // Met à jour la valeur du champ caché avec la catégorie sélectionnée
+  //alert(selectedValue); // Affiche la valeur de selectedCategory
+});
+
+  // Ajoutez un gestionnaire d'événement au clic sur le bouton "Enregistrer"
+  $('#saveImageBtn').on('click', function () {
+    // Récupérez les données du formulaire
+    var formData = new FormData($('#uploadForm')[0]);
+
+    // Envoi du formulaire via AJAX
+    $.ajax({
+      url: 'upload.php', // URL du script PHP pour l'upload
+      type: 'POST',
+      data: formData,
+      dataType: 'json',
+      contentType: false,
+      processData: false,
+      success: function (response) {
+        // Traitement de la réponse
+        if (response.success) {
+          // Si l'upload a réussi, affichez un message de succès
+          alert('Image enregistrée avec succès !');
+        } else {
+          // Si l'upload a échoué, affichez un message d'erreur
+          alert('Erreur lors de l\'enregistrement de l\'image : ' + response.message);
+        }
+      },
+      error: function () {
+        // En cas d'erreur lors de l'envoi AJAX, affichez un message d'erreur générique
+        alert('Une erreur s\'est produite lors de l\'envoi de la requête AJAX.');
+      }
+    });
+
+  });
+});
+</script>
+<script>
+// Gestionnaire d'événement pour le clic sur le bouton de suppression
+$(document).on('click', '.delete-btn', function() {
+    var imageToDelete = $(this).data('image');
+    var confirmDelete = confirm('Êtes-vous sûr de vouloir supprimer cette image ?');
+    if (confirmDelete) {
+        var selectedCategory = $('#selectedCategory').val(); // Récupérer la catégorie sélectionnée
+        // Extraire le nom de fichier de l'image (y compris l'extension)
+        var imageNameWithExtension = imageToDelete.split('/').pop();
+        console.log(imageNameWithExtension);
+        console.log(selectedCategory);
+        // Utiliser AJAX pour envoyer une requête au fichier delete_image.php
+        $.ajax({
+            url: 'delete_image.php',
+            type: 'POST',
+            dataType: 'json',
+            data: { 
+                image: imageNameWithExtension, // Envoyer seulement le nom de fichier avec l'extension
+                category: selectedCategory // Ajouter la catégorie sélectionnée
+            },
+            success: function(response) {
+                // Traitement de la réponse
+                console.log(response); // Afficher la réponse JSON dans la console
+                // Vérifier si la requête a réussi
+                if (response.success) {
+                    // Afficher un message de succès
+                    alert('Image supprimée avec succès');
+                    // Actualiser la galerie après la suppression de l'image
+                    refreshGallery();
+                } else {
+                    // Afficher un message d'erreur
+                    alert('Erreur lors de la suppression de l\'image : ' + response.message);
+                }
+            },
+            error: function() {
+                // En cas d'erreur AJAX, afficher un message d'erreur
+                alert('Une erreur s\'est produite lors de l\'envoi de la requête AJAX.');
+            }
+        });
+    }
+});
+
+// Fonction pour actualiser la galerie après la suppression d'une image
+function refreshGallery() {
+    // Effacer le contenu actuel de la galerie
+    $('#gallery .container-fluid .row').empty();
+    // Récupérer la valeur du champ caché avec l'ID selectedCategory
+    var selectedCategory = $('#selectedCategory').val();
+
+    // Appeler la fonction filterImages avec la nouvelle catégorie sélectionnée
+    filterImages(selectedCategory);
+}
+</script>
+<script>
+//Gestionnaire d'ajout des catégories
+// Gestionnaire d'événement pour le clic sur le bouton de création de dossier
+$(document).on('click', '#createFolderBtn', function() {
+    // Demander confirmation à l'utilisateur
+    var confirmCreate = confirm('Voulez-vous vraiment créer une nouvelle catégorie ?');
+    
+    // Si l'utilisateur confirme la création du dossier
+    if (confirmCreate) {
+        // Récupérer le nom du dossier à créer
+        var folderName = prompt('Veuillez saisir le nom de la nouvelle catégorie :');
+        
+        // Vérifier si un nom de dossier a été saisi
+        if (folderName) {
+            // Utiliser AJAX pour envoyer une requête au fichier create_folder.php
+            $.ajax({
+                url: 'create_folder.php',
+                type: 'POST',
+                dataType: 'text',
+                data: { folderName: folderName },
+                success: function(response) {
+                    // Afficher la réponse de création du dossier
+                    alert(response);
+                    // Recharger la page après la création réussie du dossier
+        location.reload();
+                },
+                error: function() {
+                    alert('Une erreur s\'est produite lors de la création du dossier.');
+                }
+            });
+        } else {
+            alert('Veuillez saisir le nom de la nouvelle catégorie.');
+        }
+    }
+});
+
+// // Ajout d'un gestionnaire d'événement au clic sur l'icône de suppression
+// $('.filter .bi-trash').on('click', function() {
+//     var categoryToDelete = $(this).parent().attr('id'); // Obtenez l'ID de la catégorie à supprimer
+//     alert(categoryToDelete);
+//     // Faire une requête AJAX pour supprimer la catégorie
+//     $.ajax({
+//         url: 'delete_category.php', // Script PHP pour supprimer la catégorie
+//         type: 'POST',
+//         dataType: 'json',
+//         data: { category: categoryToDelete }, // Envoyer la catégorie à supprimer
+//         success: function(response) {
+//             if (response.success) {
+//                 // Catégorie supprimée avec succès
+//                 alert('La catégorie a été supprimée avec succès.');
+//                 // Actualiser la liste des catégories après la suppression
+//                 // Vous pouvez recharger la page ou actualiser la liste des catégories à l'aide d'une autre méthode AJAX
+//             } else {
+//                 // Erreur lors de la suppression de la catégorie
+//                 alert('Une erreur s\'est produite lors de la suppression de la catégorie.');
+//             }
+//         },
+//         error: function() {
+//             // Erreur AJAX
+//             alert('Une erreur s\'est produite lors de la requête AJAX.');
+//         }
+//     });
+// });
+
+
+
+</script>
 </head>
 
 <body>
@@ -76,21 +407,60 @@
 
   <main id="main" data-aos="fade" data-aos-delay="1500">
 
-    <!-- ======= End Page Header ======= -->
-    <div class="page-header d-flex align-items-center">
-      <div class="container position-relative">
-        <div class="row d-flex justify-content-center">
-          <div class="col-lg-6 text-center">
-            <section id="filters">
-              <div id="all">Tout</div>
-              <div id="marriage">Mariage</div>
-              <div id="pregnancy">Grossesse</div>
-              <div id="baby">Bébé</div>
-              <div id="family">Famille</div>
-              <div id="baptism">Baptême</div>
-              <div id="couple">Couple</div>
-          </section>
-           
+   <!-- ======= End Page Header ======= -->
+<div class="page-header d-flex align-items-center">
+  <div class="container d-flex flex-column align-items-center">
+    <div class="row justify-content-center">
+      <section id="filters">
+        <!-- Contenu à l'intérieur de #filters -->
+      </section>
+    </div>
+    <div class="d-grid gap-2 d-md-block">
+      <button type="button" class="btn btn-success ml-2" id="createFolderBtn">
+        Ajouter une catégorie
+      </button>
+      <button type="button" class="btn btn-success ml-2" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        Ajouter une image
+      </button>
+    </div>
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" style="background-color: #47555e;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Ajout d'une image</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" >
+        <!-- Début Formulaire -->
+        <form id="uploadForm" enctype="multipart/form-data"  >
+          <div class="mb-3">
+            <label for="category" class="form-label d-flex align-items-start">Catégorie</label>
+            <select id="categorySelect" class="form-select form-select-sm" aria-label="Small select exa"
+             id="category" name="category" style="background-color: #47555e !important;
+             color: greenyellow !important;
+             border: 2px solid #dce4ec;">
+              
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="image" class="form-label d-flex align-items-start">Image</label>
+            <input type="file" class="form-control" id="image" name="image" style="background-color: #47555e !important;
+            color: greenyellow !important;
+            border: 2px solid #dce4ec;">
+          </div>
+          <input type="hidden" id="selectedCategory" name="selectedCategory" value="">
+        </form>
+        <!-- Fin formulaire -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-success" id="saveImageBtn">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+            <!-- Page modal-->
           </div>
         </div>
       </div>
@@ -100,448 +470,7 @@
     <section id="gallery" class="gallery">
       <div class="container-fluid">
 
-        <div class="row justify-content-center">
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/marriage/pexels-alejandro-martinez-1.jpg" data-marriage class="img-fluid active" alt="Mariage">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/marriage/pexels-alejandro-martinez-1.jpg" title="Mariage 1" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand "></i></a>
-              
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/marriage/pexels-brenda-valdovinos-2.jpg" data-marriage class="img-fluid active" alt="Mariage">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/marriage/pexels-brenda-valdovinos-2.jpg" title="Mariage 2" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-               
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/marriage/pexels-fernanda-pereira-3.jpg" data-marriage class="img-fluid active" alt="Mariage">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/marriage/pexels-fernanda-pereira-3.jpg" title="Mariage 3" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/marriage/pexels-pavel-danilyuk-4.jpg" data-marriage class="img-fluid active" alt="Mariage">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/marriage/pexels-pavel-danilyuk-4.jpg" title="Mariage 4" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/marriage/pexels-pavel-danilyuk-5.jpg" data-marriage class="img-fluid active" alt="Mariage">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/marriage/pexels-pavel-danilyuk-5.jpg" title="Mariage 5" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-               
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/marriage/pexels-pavel-danilyuk-6.jpg" data-marriage class="img-fluid active" alt="Mariage">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/marriage/pexels-pavel-danilyuk-6.jpg" title="Mariage 6" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/marriage/pexels-pham-hoang-kha-7.jpg" data-marriage class="img-fluid active" alt="Mariage">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/marriage/pexels-pham-hoang-kha-7.jpg" title="Mariage 7" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/marriage/pexels-thiều-hoàng-phước-8.jpg" data-marriage class="img-fluid active" alt="Mariage">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/marriage/pexels-thiều-hoàng-phước-8.jpg" title="Mariage 8" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/pregnancy/pexels-andre-furtado-1.jpg" data-pregnancy class="img-fluid active" alt="Grossesse">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/pregnancy/pexels-andre-furtado-1.jpg" title="Grossesse 1" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/pregnancy/pexels-daniel-reche-2.jpg" data-pregnancy class="img-fluid active" alt="Grossesse">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/pregnancy/pexels-daniel-reche-2.jpg" title="Grossesse 2" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/pregnancy/pexels-george-jr-kamau-3.jpg" data-pregnancy class="img-fluid active" alt="Grossesse">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/pregnancy/pexels-george-jr-kamau-3.jpg" title="Grossesse 3" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-               
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/pregnancy/pexels-helena-lopes-4.jpg" data-pregnancy class="img-fluid active" alt="Grossesse">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/pregnancy/pexels-helena-lopes-4.jpg" title="Grossesse 4" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-               
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/pregnancy/pexels-joão-paulo-de-souza-oliveira-5.jpg" data-pregnancy class="img-fluid active" alt="Grossesse">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/pregnancy/pexels-joão-paulo-de-souza-oliveira-5.jpg" title="Grossesse 5" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/pregnancy/pexels-leah-kelley-6.jpg" data-pregnancy class="img-fluid active" alt="Grossesse">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/pregnancy/pexels-leah-kelley-6.jpg" title="Grossesse 6" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/pregnancy/pexels-leah-kelley-7.jpg" data-pregnancy class="img-fluid active" alt="Grossesse">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/pregnancy/pexels-leah-kelley-7.jpg" title="Grossesse 7" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/pregnancy/pexels-lucas-mendes-8.jpg" data-pregnancy class="img-fluid active" alt="Grossesse">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/pregnancy/pexels-lucas-mendes-8.jpg" title="Grossesse 8" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-               
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baby/pexels-daniel-reche-1.jpg" data-baby class="img-fluid active" alt="Bébé">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baby/pexels-daniel-reche-1.jpg" title="Bébé 1" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baby/pexels-kelvin-agustinus-2.jpg" data-baby class="img-fluid active" alt="Bébé">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baby/pexels-kelvin-agustinus-2.jpg" title="Bébé 2" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baby/pexels-pixabay-3.jpg" data-baby class="img-fluid active" alt="Bébé">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baby/pexels-pixabay-3.jpg" title="Bébé 3" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baby/pexels-pixabay-4.jpg" data-baby class="img-fluid active" alt="Bébé">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baby/pexels-pixabay-4.jpg" title="Bébé 4" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baby/pexels-pixabay-5.jpg" data-baby="" class="img-fluid active" alt="Bébé">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baby/pexels-pixabay-5.jpg" title="Bébé 5" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baby/pexels-rene-asmussen-6.jpg" data-baby="" class="img-fluid active" alt="Bébé">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baby/pexels-rene-asmussen-6.jpg" title="Bébé 6" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baby/pexels-sam-rana-7.jpg" data-baby="" class="img-fluid active" alt="Bébé">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baby/pexels-sam-rana-7.jpg" title="Bébé 7" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baby/pexels-singkham-8.jpg" data-baby="" class="img-fluid active" alt="Bébé">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baby/pexels-singkham-8.jpg" title="Bébé 8" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-
-
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/family/pexels-august-de-richelieu-1.jpg" data-family class="img-fluid active" alt="Famille">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/family/pexels-august-de-richelieu-1.jpg" title="Famille 1" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/family/pexels-craig-adderley-2.jpg" data-family class="img-fluid active" alt="Famille">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/family/pexels-craig-adderley-2.jpg" title="Famille 2" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/family/pexels-elina-sazonova-3.jpg" data-family class="img-fluid active" alt="Famille">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/family/pexels-elina-sazonova-3.jpg" title="Famille 3" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/family/pexels-emma-bauso-4.jpg" data-family class="img-fluid active" alt="Famille">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/family/pexels-emma-bauso-4.jpg" title="Famille 4" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/family/pexels-migs-reyes-5.jpg" data-family class="img-fluid active" alt="Famille">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/family/pexels-migs-reyes-5.jpg" title="Famille 5" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/family/pexels-pixabay-6.jpg" data-family class="img-fluid active" alt="Famille">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/family/pexels-pixabay-6.jpg" title="Famille 6" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-               
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/family/pexels-pixabay-7.jpg" data-family class="img-fluid active" alt="Famille">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/family/pexels-pixabay-7.jpg" title="Famille 7" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/family/pexels-yulianto-poitier-8.jpg" data-family class="img-fluid active" alt="Famille">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/family/pexels-yulianto-poitier-8.jpg" title="Famille 8" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-
-
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baptism/pexels-andres-pérez-manjarres-1.jpg" data-baptism class="img-fluid active" alt="Baptême">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baptism/pexels-andres-pérez-manjarres-1.jpg" title="Baptême 1" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baptism/pexels-andres-pérez-manjarres-2.jpg" data-baptism class="img-fluid active" alt="Baptême">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baptism/pexels-andres-pérez-manjarres-2.jpg" title="Baptême 2" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100"><img src="../assets/img/gallery/categories/baptism/pexels-andres-pérez-manjarres-3.jpg" data-baptism class="img-fluid active" alt="Baptême">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baptism/pexels-andres-pérez-manjarres-3.jpg" title="Baptême 3" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baptism/pexels-andres-pérez-manjarres-4.jpg" data-baptism class="img-fluid active" alt="Baptême">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baptism/pexels-andres-pérez-manjarres-4.jpg" title="Baptême 4" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baptism/pexels-esteban-garcia-5.jpg" data-baptism class="img-fluid active" alt="Baptême">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baptism/pexels-esteban-garcia-5.jpg" title="Baptême 5" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baptism/pexels-jose-vasquez-6.jpg" data-baptism class="img-fluid active" alt="Baptême">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baptism/pexels-jose-vasquez-6.jpg" title="Baptême 6" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baptism/pexels-photography-maghradze-ph-7.jpg" data-baptism class="img-fluid active" alt="Baptême">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baptism/pexels-photography-maghradze-ph-7.jpg" title="Baptême 7" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/baptism/pexels-photography-maghradze-ph-8.jpg" data-baptism class="img-fluid active" alt="Baptême">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/baptism/pexels-photography-maghradze-ph-8.jpg" title="Baptême 8" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-               
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-
-
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/couple/pexels-anastasiya-lobanovskaya-1.jpg" data-couple class="img-fluid active" alt="Couple">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/couple/pexels-anastasiya-lobanovskaya-1.jpg" title="Couple 1" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/couple/pexels-andre-furtado-2.jpg" data-couple class="img-fluid active" alt="Couple">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/couple/pexels-andre-furtado-2.jpg" title="Couple 2" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/couple/pexels-asad-photo-maldives-3.jpg" data-couple class="img-fluid active" alt="Couple">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/couple/pexels-asad-photo-maldives-3.jpg" title="Couple 3" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/couple/pexels-asad-photo-maldives-4.jpg" data-couple class="img-fluid active" alt="Couple">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/couple/pexels-asad-photo-maldives-4.jpg" title="Couple 4" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/couple/pexels-gabriel-bastelli-5.jpg" data-couple class="img-fluid active" alt="Couple">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/couple/pexels-gabriel-bastelli-5.jpg" title="Couple 5" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/couple/pexels-helena-lopes-6.jpg" data-couple class="img-fluid active" alt="Couple">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/couple/pexels-helena-lopes-6.jpg" title="Couple 6" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-               
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/couple/pexels-jasmin-wedding-photography-7.jpg" data-couple class="img-fluid active" alt="Couple">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/couple/pexels-jasmin-wedding-photography-7.jpg" title="Couple 7" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-          <div class="col-xl-3 col-lg-4 col-md-6">
-            <div class="gallery-item h-100">
-              <img src="../assets/img/gallery/categories/couple/pexels-tan-danh-8.jpg" data-couple class="img-fluid active" alt="Couple">
-              <div class="gallery-links d-flex align-items-center justify-content-center">
-                <a href="../assets/img/gallery/categories/couple/pexels-tan-danh-8.jpg" title="Couple 8" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a>
-                
-              </div>
-            </div>
-          </div><!-- End Gallery Item -->
-
-        </div>
-
+</div>
       </div>
     </section><!-- End Gallery Section -->
 
